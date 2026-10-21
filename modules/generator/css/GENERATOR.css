@@ -5,3 +5,59 @@ menu {min-width: 15vw;}
 row > .row > div:first-child {width: 100%; }
 row input[name="title"] { font-size: 150%; font-weight: bolder; }
 textarea.json_editor {width: 100%; height:20vh; }
+
+.generator-display-editor {
+    width: min(100%, 70rem);
+    margin: 0.5rem 0 1rem;
+    padding: 1rem;
+    border: 1px solid #b9c5c4;
+    border-radius: 0.5rem;
+    background: #fff;
+}
+.generator-display-editor [hidden] { display: none !important; }
+.generator-display-toolbar, .generator-display-field-heading, .generator-display-actions,
+.generator-display-options, .generator-display-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.generator-display-toolbar, .generator-display-field-heading { justify-content: space-between; }
+.generator-display-fields { display: grid; gap: 0.75rem; margin: 1rem 0; }
+.generator-display-field {
+    padding: 0.75rem;
+    border: 1px solid #d5dada;
+    border-radius: 0.4rem;
+    background: #f8f9f9;
+    position: relative;
+    transition: opacity 120ms ease, border-color 120ms ease;
+}
+.generator-display-field.is-dragging { opacity: 0.45; }
+.generator-display-field.drop-before::before,
+.generator-display-field.drop-after::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #287c74;
+}
+.generator-display-field.drop-before::before { top: -2px; }
+.generator-display-field.drop-after::after { bottom: -2px; }
+.generator-display-field label { display: grid; gap: 0.25rem; font-size: 0.9rem; }
+.generator-display-field input, .generator-display-field select,
+.generator-display-option input { width: 100%; min-width: 0; }
+editor .generator-display-editor label,
+editor .generator-display-editor input:not([type="radio"]) { min-width: 0; }
+.generator-display-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; margin-top: 0.75rem; }
+.generator-display-option { margin: 0.4rem 0; }
+.generator-display-option input { flex: 1; }
+.generator-display-help, .generator-display-status { margin: 0.5rem 0; font-size: 0.9rem; }
+.generator-display-status[data-invalid="true"] { color: #a32121; font-weight: 600; }
+.generator-display-raw { width: 100% !important; min-height: 18rem; margin-top: 0.75rem; font-family: monospace; }
+.generator-display-editor button { width: auto; height: auto; margin: 0; padding: 0.35rem 0.65rem; cursor: pointer; }
+.generator-display-editor .generator-display-drag-handle { cursor: grab; touch-action: none; }
+.generator-display-editor .generator-display-drag-handle:active { cursor: grabbing; }
+.generator-display-editor .generator-display-advanced textarea { width: 100%; min-height: 8rem; font-family: monospace; }
+@media (max-width: 800px) {
+    .generator-display-grid { grid-template-columns: 1fr; }
+}

@@ -75,7 +75,8 @@ function getAllInputs(r) {
         row = document.querySelector('splashcontainer row[id="row_' + r + '"]')
         if (row == null) { console.log('no inputs found', r); return false;}
     }
-    let inputs = row.querySelectorAll('input:not([type="checkbox"]), select, textarea, checkboxes, checkboxes_in_table, div.text_editor');
+    let inputs = [...row.querySelectorAll('input:not([type="checkbox"]), select, textarea, checkboxes, checkboxes_in_table, div.text_editor')]
+        .filter(input => !input.closest('.generator-display-editor'));
     console.log('Get inputs => ', inputs.length);
     if (inputs.length > 0) { return inputs; }
     else {return false;}
@@ -742,6 +743,13 @@ function saveRow (toSaveButton) {
         let index = toSaveButton.getAttribute('index')
         if (index == null) {console.log('index not defined'); return; }
         console.log('start save row', row);
+        const rowElement = toSaveButton.closest('row');
+        const invalidDisplayEditor = rowElement && rowElement.querySelector('.generator-display-editor[data-invalid="true"]');
+        if (invalidDisplayEditor) {
+            invalidDisplayEditor.querySelector('[role="alert"]').textContent = 'Corrigez le JSON invalide avant l’enregistrement.';
+            resolve(false);
+            return;
+        }
 
         // check required
         let required = editor.querySelectorAll('#row_' + row + ' [required]');
@@ -1025,9 +1033,14 @@ function setEditor(row = false) {
                 });
             }
 
-            if (i.classList.contains('json_editor') && i.value.length > 0) { 
-                i.value = JSON.stringify(JSON.parse(i.value), undefined, 4);
+            if (i.classList.contains('json_editor') && i.value.length > 0) {
+                try {
+                    i.value = JSON.stringify(JSON.parse(i.value), undefined, 4);
+                } catch (error) {
+                    console.warn('Invalid JSON in editor field', i.name, error);
+                }
             }
+            if (i.closest('.generator-display-editor')) { return; }
             i.addEventListener('input', () => {
                 defineToSave(i.getAttribute('row'));
             });
@@ -1049,6 +1062,9 @@ function setEditor(row = false) {
                 defineToSave(i.getAttribute('row'));
             })
         })
+    }
+    if (typeof setupGeneratorDisplayEditors === 'function') {
+        setupGeneratorDisplayEditors(row || editor);
     }
     // checkboxes
     if (checkboxesToSet && checkboxesToSet.length > 0) {
