@@ -4,6 +4,18 @@ const generatorDisplayInputTypes = [
     'display', 'mailto', 'display_on_db', 'hidden', 'file', 'thumb', 'file_list'
 ];
 
+let generatorDisplayDatalistCounter = 0;
+
+// tables of the database, from the table_name select (db_selector) of the same generator row
+function getGeneratorTableNames(textarea) {
+    const row = textarea.closest('row') || textarea.closest('form') || document;
+    const tableSelect = row.querySelector('select[column="table_name"]');
+    if (!tableSelect) { return []; }
+    return [...tableSelect.options]
+        .filter(option => option.value !== '' && !option.hasAttribute('data-unknown_value'))
+        .map(option => option.value);
+}
+
 function setupGeneratorDisplayEditors(container) {
     if (!container) { return; }
 
@@ -44,7 +56,16 @@ function setupGeneratorDisplayEditors(container) {
         addFieldButton.type = 'button';
         addFieldButton.textContent = 'Ajouter un champ';
 
-        editorRoot.append(toolbar, status, help, fields, addFieldButton);
+        // suggestions for the "Table source" settings (free values stay possible)
+        const tablesDatalist = document.createElement('datalist');
+        tablesDatalist.id = `generator-display-tables-${++generatorDisplayDatalistCounter}`;
+        getGeneratorTableNames(textarea).forEach(tableName => {
+            const option = document.createElement('option');
+            option.value = tableName;
+            tablesDatalist.appendChild(option);
+        });
+
+        editorRoot.append(toolbar, status, help, fields, addFieldButton, tablesDatalist);
         textarea.parentElement.insertBefore(editorRoot, textarea);
 
         const originalDisplay = textarea.style.display;
@@ -254,6 +275,9 @@ function setupGeneratorDisplayEditors(container) {
                         }
                         syncTextarea();
                     });
+                    if (options.tables && tablesDatalist.options.length > 0) {
+                        control.setAttribute('list', tablesDatalist.id);
+                    }
                 }
                 settings.appendChild(makeLabeledControl(label, control));
             }
@@ -283,7 +307,7 @@ function setupGeneratorDisplayEditors(container) {
                     makeLabeledControl('Valeur décochée', uncheckedValue)
                 );
             } else if (type === 'db_selector') {
-                addSetting('table', 'Table source');
+                addSetting('table', 'Table source', { tables: true });
                 addSetting('select', 'Colonnes à charger');
                 addSetting('value_on', 'Colonne de valeur');
                 addSetting('option_text_on', 'Colonne(s) du libellé', { list: true });
@@ -294,7 +318,7 @@ function setupGeneratorDisplayEditors(container) {
                 addSetting('null_allowed', 'Libellé du choix vide');
                 addSetting('request_values', 'Valeurs des paramètres SQL', { multiline: true, json: true });
             } else if (type === 'db_checkboxes') {
-                addSetting('table', 'Table source');
+                addSetting('table', 'Table source', { tables: true });
                 addSetting('select', 'Colonnes à charger');
                 addSetting('values_on', 'Colonne de valeur');
                 addSetting('text_on', 'Colonne du libellé');
@@ -326,7 +350,7 @@ function setupGeneratorDisplayEditors(container) {
                 });
                 settings.appendChild(makeLabeledControl('Séparateur des valeurs', separator));
             } else if (type === 'display_on_db') {
-                addSetting('content_table', 'Table source');
+                addSetting('content_table', 'Table source', { tables: true });
                 addSetting('content_on_field', 'Colonne de correspondance');
                 addSetting('content_display', 'Colonnes affichées (séparées par des virgules)', { list: true });
             } else if (type === 'text' || type === 'tel' || type === 'text_empty' || type === 'textarea' || type === 'text_editor') {

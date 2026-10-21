@@ -78,6 +78,48 @@ function addFormat ($format, $row_format) {
 }
 
 $inputs_memo = [];
+// content of the css_include / js_include columns of the generator (paths relative to modules/)
+// "file:name" or "file-name" => content of the file generator/<dir>/name (never outside of this folder)
+// $any_path (css, as before): "file-path" can also be any file path
+// otherwise the column contains the code itself
+function generatorIncludeContent($include, $dir, $any_path = false) {
+    if ($include === null || $include === '') {
+        return '';
+    }
+    $name = substr($include, 5);
+    if (strpos($include, 'file:') === 0 || strpos($include, 'file-') === 0) {
+        $folder = realpath('generator/' . $dir);
+        $file = realpath('generator/' . $dir . '/' . $name);
+        if ($folder && $file && strpos($file, $folder . DIRECTORY_SEPARATOR) === 0 && is_file($file)) {
+            return file_get_contents($file);
+        }
+        if ($any_path && is_file($name)) {
+            return file_get_contents($name);
+        }
+        // missing file: nothing (the name is not code)
+        return '';
+    }
+    if ($any_path && $name !== '' && is_file($name)) {
+        return file_get_contents($name);
+    }
+    return stripcslashes($include);
+}
+
+// options for the values of a select that are not in its list (input option keep_unknown_value)
+// $known: values of the options already created; $value: string or array (multiple)
+function unknownValuesOptions($value, $known) {
+    $options = '';
+    $values = is_array($value) ? $value : array($value);
+    foreach($values as $v) {
+        if ($v === null || $v === '' || in_array((string) $v, array_map('strval', $known), true)) {
+            continue;
+        }
+        $v = htmlspecialchars($v, ENT_QUOTES);
+        $options .= '<option value="' . $v . '" selected data-unknown_value>⚠️ ' . $v . '</option>';
+    }
+    return $options;
+}
+
 function createInput($format, $value, $table, $row, $edit, $can_be_edited = true, $extra_condition = false) {
     global $db, $inputs_memo, $display_mode;
 
@@ -117,6 +159,7 @@ function createInput($format, $value, $table, $row, $edit, $can_be_edited = true
         $elt .= ' >';
     }
     $id_elt = $table . '_' . $format['column_name'] . '_' . $row;
+    $value_encoded = false;
 
     // create label if label !
     if (isset($format['label']) && $format['label'] != null & $format['label'] != '' && $display_mode != 'table') {
@@ -129,6 +172,7 @@ function createInput($format, $value, $table, $row, $edit, $can_be_edited = true
 
         if ($value != null) {
             $value = htmlentities($value);
+            $value_encoded = true;
         }
     }
 
@@ -287,10 +331,17 @@ function createInput($format, $value, $table, $row, $edit, $can_be_edited = true
              if ($cond && $display_mode == 'table') {
                 $elt .= ' class="' . $format['container']['class_on_condition']['class'] . '"';
             }
+            if (!$edit || !$can_be_edited) {
+                $elt .= ' disabled';
+            }
             if ($attributes) {
                 $elt .= ' ' . $attributes;
             }
             $elt .= ' >';
+            // compare the options with the value saved in the db (not encoded by the label)
+            if ($value_encoded) {
+                $value = html_entity_decode($value);
+            }
             // prepare case of select with attribute mutliple
             $multiple = false;
             if (isset($format['input']['attributes']) && (in_array('multiple', $format['input']['attributes']) || array_key_exists('multiple', $format['input']['attributes']))) {
@@ -298,6 +349,7 @@ function createInput($format, $value, $table, $row, $edit, $can_be_edited = true
                 $value = explode(',', $value);
             }
 
+            $known_values = [];
             if (isset($format['input']['options']) && is_countable($format['input']['options'])) {
                 foreach($format['input']['options'] as $s_o) {
                     $elt .= '<option';
@@ -306,10 +358,14 @@ function createInput($format, $value, $table, $row, $edit, $can_be_edited = true
                     } else {
                         $selected = $s_o['value'] == $value ? ' selected' : '';
                     }
-                    if (isset($s_o['value'])) { $elt .= ' value="' . $s_o['value'] . '"' . $selected; }
+                    if (isset($s_o['value'])) {
+                        $elt .= ' value="' . $s_o['value'] . '"' . $selected;
+                        $known_values[] = $s_o['value'];
+                    }
                     if (isset($s_o['attributes']) && is_countable($s_o['attributes'])) {
-                        foreach($s_o['attributes'] as $s_a) {
-                            $elt .= ' ' . $s_a;
+                        // list of attributes ["disabled"] or object {"data-x": "y"}
+                        foreach($s_o['attributes'] as $s_k => $s_a) {
+                            $elt .= is_int($s_k) ? ' ' . $s_a : ' ' . $s_k . '="' . $s_a . '"';
                         }
                     }
                     $elt .= '>';
@@ -317,7 +373,10 @@ function createInput($format, $value, $table, $row, $edit, $can_be_edited = true
                     $elt .= "</option>";
                 }
             }
-            $elt .= "</select>";    
+            if (!empty($format['input']['keep_unknown_value'])) {
+                $elt .= unknownValuesOptions($value, $known_values);
+            }
+            $elt .= "</select>";
             break;
          case 'checkbox' :
             $elt .= '<checkboxes';
@@ -434,7 +493,15 @@ function createInput($format, $value, $table, $row, $edit, $can_be_edited = true
                 $request = 'SELECT ';
                 $request .= isset($selector['select']) ? ' ' . $selector['select'] : ' *';
                 $request .= ' FROM ' . $selector['table'];
-                $request .= isset($selector['where']) ? ' WHERE ' . $selector['where'] . ' AND logical_delete = 0': ' WHERE logical_delete = 0';
+                // no_logical_delete: source without logical_delete column (ex. information_schema.tables)
+                $conditions = [];
+                if (isset($selector['where'])) {
+                    $conditions[] = $selector['where'];
+                }
+                if (empty($selector['no_logical_delete'])) {
+                    $conditions[] = 'logical_delete = 0';
+                }
+                $request .= count($conditions) > 0 ? ' WHERE ' . implode(' AND ', $conditions) : '';
                 $request .= isset($selector['order']) ? ' ORDER BY ' . $selector['order'] : '';
                 $request .= isset($selector['limit']) ? ' LIMIT ' . $selector['limit'] : '';
                 $d_selector = $db->prepare($request);
@@ -456,7 +523,7 @@ function createInput($format, $value, $table, $row, $edit, $can_be_edited = true
                 break;
             }
             $in_case_of_null = true;
-            if (count($selector_content) == 0 && isset($selector['in_case_of_null']) && $selector['in_case_of_null'] = 'disabled') {
+            if (count($selector_content) == 0 && isset($selector['in_case_of_null']) && $selector['in_case_of_null'] == 'disabled') {
                 $in_case_of_null = false;
             } 
 
@@ -485,6 +552,10 @@ function createInput($format, $value, $table, $row, $edit, $can_be_edited = true
             $elt .=  ' >';
             $elt .= isset($selector['placeholder']) ? $selector['placeholder'] : 'Veuillez choisir';
             $elt .= '</option>';
+            // compare the options with the value saved in the db (not encoded by the label)
+            if ($value_encoded) {
+                $value = html_entity_decode($value);
+            }
             // prepare case of select with attribute mutliple
             $multiple = false;
             if (isset($selector['attributes']) && (in_array('multiple', $selector['attributes']) || array_key_exists('multiple', $selector['attributes'])) && $value != '' && $value != null) {
@@ -492,6 +563,7 @@ function createInput($format, $value, $table, $row, $edit, $can_be_edited = true
                 $value = explode(',', $value);
             }
             // define all options
+            $known_values = [];
             foreach ($selector_content as $k => $v) {
                 if ($multiple) {
                     $selected = in_array($v[$selector['value_on']], $value) ? ' selected' : '';
@@ -499,6 +571,7 @@ function createInput($format, $value, $table, $row, $edit, $can_be_edited = true
                     $selected = $v[$selector['value_on']] == $value ? ' selected' : '';
                 }
                 $option_value = isset($selector['value_on']) ? $v[$selector['value_on']] : $v['id'];
+                $known_values[] = $option_value;
                 $option_content = '';
                 if (is_array($selector['option_text_on'])) {
                     $separator = !empty($selector['option_text_on_separator']) ? $selector['option_text_on_separator'] : ' ';
@@ -544,8 +617,14 @@ function createInput($format, $value, $table, $row, $edit, $can_be_edited = true
                             }
                         }
                         $elt .= '>' . $o['content'] . '</option>';
+                        if (isset($o['value'])) {
+                            $known_values[] = $o['value'];
+                        }
                     }
                 }
+            }
+            if (!empty($selector['keep_unknown_value'])) {
+                $elt .= unknownValuesOptions($value, $known_values);
             }
             $elt .= '</select>';
             break;
@@ -1079,14 +1158,7 @@ function defineContent($generator_index) {
     // add css
     if ($selector['css_include'] != null &&
         $selector['css_include'] != '') {
-        if (strpos($selector['css_include'], 'file') === 0 &&
-            is_file('generator/css/' . substr($selector['css_include'], 5))) {
-            $content .= file_get_contents('generator/css/' . substr($selector['css_include'], 5));
-        } else if (is_file(substr($selector['css_include'], 5))) {
-            $content .= file_get_contents(substr($selector['css_include'], 5));
-        } else {
-            $content .= stripcslashes($selector['css_include']);
-        }
+        $content .= generatorIncludeContent($selector['css_include'], 'css', true);
 
         // run (if existing) plugin "include_css"
         $plugins = getPluginsRepositories('include_css.php');
@@ -1417,6 +1489,14 @@ function defineContent($generator_index) {
 
     // close container
     $content .= $selector['container_end'];
+
+    // add js at the end of the content: not run by innerHTML (type), js/script.js runGeneratorScripts() runs it once displayed
+    $js_include = isset($selector['js_include']) ? generatorIncludeContent($selector['js_include'], 'js') : '';
+    if (trim($js_include) !== '') {
+        $content .= '<script type="text/labo-generator" data-generator="' . $selector['id'] . '">';
+        $content .= str_ireplace('</script', '<\/script', $js_include);
+        $content .= '</script>';
+    }
 
     // close general container
     $content .= '</wrapper>';

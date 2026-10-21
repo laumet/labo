@@ -1274,6 +1274,22 @@ function setEditor(row = false) {
 
     // add totalisers
     setTotalisers();
+
+    // js_include of the generator lines, once the content is displayed
+    runGeneratorScripts(editor);
+}
+
+// scripts added by the js_include column of the generator (constructor_swap_functions.php defineContent)
+// scripts inserted by innerHTML are not run: run each one once, in the global scope
+function runGeneratorScripts(container) {
+    if (!container) { return; }
+    container.querySelectorAll('script[type="text/labo-generator"]:not([data-done])').forEach(s => {
+        s.setAttribute('data-done', '');
+        let run = document.createElement('script');
+        run.textContent = s.textContent;
+        document.head.appendChild(run);
+        run.remove();
+    });
 }
 
 // headertabs of a module (form_complement headertabs): show the rows of the active tab

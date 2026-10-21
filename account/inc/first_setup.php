@@ -18,6 +18,57 @@ const LABO_BASE_COLUMNS = '
 ';
 const LABO_TABLE_OPTIONS = ' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci';
 
+// inputs of the GENERATOR line for table_name (tb) and form: selects with all the tables and the display modes
+// keep_unknown_value keeps the values out of the lists (plugins, views, form with |complement)
+function labo_generator_editor_inputs () {
+	return array(
+		'table_name' => array(
+			'type' => 'db_selector', 'table' => 'information_schema.tables', 'no_logical_delete' => true,
+			'select' => 'table_name AS name', 'where' => 'table_schema = DATABASE()', 'order' => 'name ASC',
+			'value_on' => 'name', 'option_text_on' => 'name', 'placeholder' => 'Choisir une table', 'keep_unknown_value' => true
+		),
+		'form' => array(
+			'type' => 'select', 'keep_unknown_value' => true,
+			'options' => array(
+				'0' => array('value' => 'row', 'text' => 'row'),
+				'1' => array('value' => 'column', 'text' => 'column'),
+				'2' => array('value' => 'table', 'text' => 'table')
+			)
+		)
+	);
+}
+
+// display JSON of the GENERATOR line with the inputs of labo_generator_editor_inputs (labels and order kept)
+// and the js_include field (after css_include) if missing; the entries are numbered again from 1
+// $only_text: replace only the inputs still of type text (not customised), for existing installations
+// returns false if the display is not valid JSON
+function labo_generator_editor_display ($display, $only_text = false) {
+	$entries = json_decode($display, true);
+	if (!is_array($entries)) {
+		return false;
+	}
+	$entries = array_values($entries);
+	$columns = array_map(function ($entry) { return is_array($entry) && isset($entry['column_name']) ? $entry['column_name'] : null; }, $entries);
+	if (!in_array('js_include', $columns, true)) {
+		$js_entry = array('column_name' => 'js_include', 'label' => 'include for JS', 'input' => array('type' => 'text'));
+		$position = array_search('css_include', $columns, true);
+		array_splice($entries, $position === false ? count($entries) : $position + 1, 0, array($js_entry));
+	}
+	// keys "1", "2"... (as the display editor saves them)
+	$entries = array_combine(range(1, count($entries)), $entries);
+	$inputs = labo_generator_editor_inputs();
+	foreach ($entries as $k => $entry) {
+		if (!is_array($entry) || !isset($entry['column_name']) || !isset($inputs[$entry['column_name']])) {
+			continue;
+		}
+		if ($only_text && isset($entry['input']['type']) && $entry['input']['type'] !== 'text') {
+			continue;
+		}
+		$entries[$k]['input'] = $inputs[$entry['column_name']];
+	}
+	return json_encode($entries, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+}
+
 // first lines of the generator table, inserted in this order (ids 1, 2, 3, then 4, 5, 6 in page_with_modules)
 // columns not given keep their default value
 function labo_first_setup_generator_lines ($mode = LABO_DATA_MODE_DEFAULT) {
@@ -28,10 +79,10 @@ function labo_first_setup_generator_lines ($mode = LABO_DATA_MODE_DEFAULT) {
 			'title' => 'GENERATOR', 'table_name' => 'generator', 'user_type' => 'sa', 'generator_see_as' => '1',
 			'page' => 'labo', 'form' => 'row', 'section' => 1, 'position_in_section' => 1,
 			'request_select' => '*', 'request_from' => '', 'request_where' => '', 'request_order' => '', 'request_values' => '',
-			'display' => <<<'JSON'
+			'display' => labo_generator_editor_display(<<<'JSON'
 {"1":{"column_name":"title","label":"title","input":{"type":"text"}},"2":{"column_name":"text_id","label":"text_id","input":{"type":"text"}},"3":{"column_name":"table_name","label":"table_name ⚠️ AS => tb","input":{"type":"text"}},"4":{"column_name":"user_type","label":"user_type","input":{"type":"text"}},"5":{"column_name":"generator_see_as","label":"see_as","input":{"type":"text"}},"6":{"column_name":"page","label":"page","input":{"type":"text"}},"7":{"column_name":"form","label":"form","input":{"type":"text"}},"8":{"column_name":"section","label":"section","input":{"type":"text"}},"9":{"column_name":"position_in_section","label":"position_in_section","input":{"type":"text"}},"10":{"column_name":"request_select","label":"request_select ⚠️ selecting 'id' is required","input":{"type":"text"}},"11":{"column_name":"request_from","label":"request_from ⚠️ added to table_name !","input":{"type":"text"}},"12":{"column_name":"request_where","label":"request_where","input":{"type":"text"}},"13":{"column_name":"request_order","label":"request_order","input":{"type":"text"}},"14":{"column_name":"request_values","label":"request_values","input":{"type":"text"}},"15":{"column_name":"display","label":"display","input":{"type":"json"}},"16":{"column_name":"css_include","label":"include for CSS","input":{"type":"text"}},"17":{"column_name":"save_include","label":"include when saving row","input":{"type":"text"}},"18":{"column_name":"container_start","label":"container_start","input":{"type":"text"}},"19":{"column_name":"after_start_include","label":"include just after creating content","input":{"type":"text"}},"20":{"column_name":"before_end_include","label":"include just before ending content","input":{"type":"text"}},"21":{"column_name":"container_end","label":"container_end","input":{"type":"text"}},"22":{"column_name":"counter_rows","label":"counter_rows","input":{"type":"radio","content":{"0":"off","1":"on"}}},"23":{"column_name":"can_edit","label":"can_edit","input":{"type":"radio","content":{"0":"off","1":"on"}}},"24":{"column_name":"can_add","label":"can_add","input":{"type":"radio","content":{"0":"off","1":"on"}}},"25":{"column_name":"can_delete","label":"can_delete","input":{"type":"radio","content":{"0":"off","1":"on","2":"logical_delete"}}},"26":{"column_name":"can_filter","label":"can_filter","input":{"type":"radio","content":{"0":"off","1":"on"}}},"27":{"column_name":"can_refresh","label":"can_refresh","input":{"type":"radio","content":{"0":"off","1":"on"}}},"28":{"column_name":"edit_by_row_mode","label":"edit_by_row_mode","input":{"type":"radio","content":{"0":"off","1":"on"}}},"29":{"column_name":"plugin_pdf_button","label":"plugin_pdf_button","input":{"type":"radio","content":{"0":"off","1":"on"}}},"30":{"column_name":"plugin_pdf_params","label":"plugin_pdf_params","input":{"type":"json"}},"31":{"column_name":"conditional_display","label":"conditional_display","input":{"type":"json"}},"32":{"column_name":"plugin_table_export","label":"plugin_table_export","input":{"type":"select","options":{"0":{"value":"0","text":"no_export","attributes":{"selected":""}},"1":{"value":"1","text":"csv"},"2":{"value":"2","text":"xlsx"}}}}}
-JSON,
-			'css_include' => 'file-GENERATOR.css', 'save_include' => '',
+JSON),
+			'css_include' => 'file-GENERATOR.css', 'js_include' => '', 'save_include' => '',
 			'container_start' => '', 'after_start_include' => '', 'before_end_include' => '', 'container_end' => '',
 			'counter_rows' => 0, 'can_edit' => 1, 'can_add' => 1, 'can_delete' => 0, 'can_filter' => 1, 'can_refresh' => 0, 'edit_by_row_mode' => 0,
 			'conditional_display' => 'null', 'in_case_of_null' => null, 'reset_session' => null
@@ -150,6 +201,7 @@ function labo_basis_tables_sql ($mode) {
 		request_values TEXT NULL,
 		display LONGTEXT NULL,
 		css_include TEXT NULL,
+		js_include TEXT NULL,
 		save_include TEXT NULL,
 		container_start TEXT NULL,
 		after_start_include TEXT NULL,

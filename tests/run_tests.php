@@ -238,5 +238,96 @@ check('check_hability.php stops a request without index (exit, not return)', pre
 check('save_row.php checks the module rights in page_with_modules', strpos(file_get_contents($root . '/modules/inc/save_row.php'), "\$authorisation['can_add'] !== 1") !== false);
 
 // ---------------------------------------------------------------------------
+section('8. GENERATOR editor: table_name and form selects (createInput)');
+
+require_once $root . '/modules/inc/constructor_swap_functions.php';
+
+$generator_display = json_decode(labo_first_setup_generator_lines('page_with_modules')[0]['display'], true);
+$generator_inputs = array();
+foreach ($generator_display as $entry) {
+	$generator_inputs[$entry['column_name']] = $entry;
+}
+check('GENERATOR line: table_name is a db_selector on information_schema.tables',
+	$generator_inputs['table_name']['input']['type'] === 'db_selector' &&
+	$generator_inputs['table_name']['input']['table'] === 'information_schema.tables' &&
+	$generator_inputs['table_name']['label'] === 'table_name ⚠️ AS => tb');
+check('GENERATOR line: form is a select (row, column, table)', $generator_inputs['form']['input']['type'] === 'select' &&
+	array_column($generator_inputs['form']['input']['options'], 'value') === array('row', 'column', 'table'));
+check('GENERATOR line: order of the display kept', array_keys($generator_display)[2] === 3 && $generator_display['7']['column_name'] === 'form');
+
+$customised = '{"1":{"column_name":"table_name","input":{"type":"textarea"}},"2":{"column_name":"form","input":{"type":"text"}}}';
+$upgraded = json_decode(labo_generator_editor_display($customised, true), true);
+check('upgrade: customised input kept, text input replaced', $upgraded['1']['input']['type'] === 'textarea' && $upgraded['2']['input']['type'] === 'select');
+check('upgrade: invalid display refused', labo_generator_editor_display('{not json', true) === false);
+
+// fake database for db_selector: records the request, answers the given rows
+class FakeSelectorStatement {
+	public function __construct ($rows) { $this->rows = $rows; }
+	public $rows;
+	public function execute ($values = array()) { return true; }
+	public function fetchAll ($mode = null) { return $this->rows; }
+}
+class FakeSelectorDb {
+	public $sql = array();
+	public $rows = array();
+	public function prepare ($sql) { $this->sql[] = $sql; return new FakeSelectorStatement($this->rows); }
+}
+$installer_db = $db;
+$db = new FakeSelectorDb();
+$db->rows = array(array('name' => 'generator'), array('name' => 'users'));
+$display_mode = 'row';
+
+$tb = $generator_inputs['table_name'];
+$html = createInput($tb, 'users', 'generator', 1, true);
+check('db_selector no_logical_delete: no logical_delete condition',
+	end($db->sql) === 'SELECT  table_name AS name FROM information_schema.tables WHERE table_schema = DATABASE() ORDER BY name ASC');
+check('db_selector: one option per table, value selected', strpos($html, '<option value="users" selected') !== false && strpos($html, '<option value="generator" >') !== false);
+check('db_selector: known value not duplicated', strpos($html, 'data-unknown_value') === false);
+$html = createInput($tb, '/plugins/pdf/define_content.php', 'generator', 1, true);
+check('db_selector keep_unknown_value: plugin path kept and selected', strpos($html, '<option value="/plugins/pdf/define_content.php" selected data-unknown_value>') !== false);
+$db->rows = array();
+createInput(array('column_name' => 'role_id', 'input' => array('type' => 'db_selector', 'table' => 'roles', 'option_text_on' => 'role_name', 'value_on' => 'id')), 1, 'users', 1, true);
+check('db_selector without no_logical_delete: logical_delete condition kept', strpos(end($db->sql), 'WHERE logical_delete = 0') !== false);
+
+$form = $generator_inputs['form'];
+$html = createInput($form, 'table', 'generator', 1, true);
+check('select: value selected, no unknown option', strpos($html, '<option value="table" selected>') !== false && strpos($html, 'data-unknown_value') === false);
+$html = createInput($form, 'table|headertabs§type', 'generator', 1, true);
+check('select keep_unknown_value: form with |complement kept (label encoding undone)',
+	strpos($html, '<option value="table|headertabs§type" selected data-unknown_value>') !== false && strpos($html, '<option value="table" selected>') === false);
+check('select: disabled when not editable', strpos(createInput($form, 'row', 'generator', 1, false), ' disabled') !== false);
+$html = createInput(array('column_name' => 'x', 'input' => array('type' => 'select', 'options' => array(array('value' => 'a', 'text' => 'A', 'attributes' => array('data-x' => 'y', 'hidden'))))), 'a', 't', 1, true);
+check('select: option attributes as names and values', strpos($html, '<option value="a" selected data-x="y" hidden>') !== false);
+check('select without keep_unknown_value: unknown value not added', strpos(createInput(array('column_name' => 'form', 'input' => array_diff_key($form['input'], array('keep_unknown_value' => 1))), 'other', 'generator', 1, true), 'data-unknown_value') === false);
+
+$db = $installer_db;
+
+// ---------------------------------------------------------------------------
+section('9. js_include / css_include of the generator lines');
+
+$generator_columns = array_column($generator_display, 'column_name');
+check('GENERATOR line: js_include field just after css_include',
+	array_search('js_include', $generator_columns, true) === array_search('css_include', $generator_columns, true) + 1);
+check('GENERATOR line: display numbered from 1 without gap', array_keys($generator_display) === range(1, count($generator_display)));
+check('generator table: js_include column after css_include',
+	strpos(labo_basis_tables_sql('page_with_modules')['generator'], "css_include TEXT NULL,\n\t\tjs_include TEXT NULL,") !== false);
+$upgraded_twice = array_column(json_decode(labo_generator_editor_display(labo_generator_editor_display($customised, true), true), true), 'column_name');
+check('upgrade: js_include added once (no css_include => at the end)',
+	count(array_keys($upgraded_twice, 'js_include')) === 1 && end($upgraded_twice) === 'js_include');
+
+$cwd = getcwd();
+chdir($root . '/modules');
+$generator_css = file_get_contents('generator/css/GENERATOR.css');
+check('css file-name => content of generator/css/name', generatorIncludeContent('file-GENERATOR.css', 'css', true) === $generator_css);
+check('css file:name => content of generator/css/name', generatorIncludeContent('file:GENERATOR.css', 'css', true) === $generator_css);
+check('css code => the code itself', generatorIncludeContent('h1 { color: red; }', 'css', true) === 'h1 { color: red; }');
+check('js code => the code itself', generatorIncludeContent('console.log(1);', 'js') === 'console.log(1);');
+check('js missing file => nothing (not the name as code)', generatorIncludeContent('file:missing.js', 'js') === '');
+check('js file out of generator/js refused', generatorIncludeContent('file:../inc/users_save.php', 'js') === '' &&
+	generatorIncludeContent('file:../../../core/connect_db.php', 'js') === '');
+check('empty include => nothing', generatorIncludeContent(null, 'js') === '' && generatorIncludeContent('', 'css', true) === '');
+chdir($cwd);
+
+// ---------------------------------------------------------------------------
 echo "\n$labo_tests_count tests, $labo_tests_failed failed\n";
 exit($labo_tests_failed === 0 ? 0 : 1);
