@@ -1,0 +1,8 @@
+{
+  "site_title": "Your site",
+  "labo_title" : "LABO",
+  "labo_link_on_site" : "LABO",
+  "site_link_in_labo" : "Retour",
+  "html_content_for_site_name" : "<style>#site_title {color: white; align-items: flex-end;}#site_title *:not(.logo) {  font-size: 1.16em;} #site_title .logo {   font-size: 6em; margin-right: 0.2em; line-height: 0.8; }</style><div id=\"site_title\" class=\"title horizontal\"><div class=\"logo\">YSW</div><div class=\"vertical\"><div>Your</div><div>Site</div><div>On the WEB</div></div></div>",
+  "contact_mail_address":"define.your@email.address"
+}

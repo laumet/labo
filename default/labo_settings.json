@@ -1,0 +1,4 @@
+{
+    "_help": "data_management_mode: single_generator_per_page (default, one generator line = one menu page) or page_with_modules (a page groups several generator lines). Choose it BEFORE the first setup; it is saved in the database at installation and must never be changed afterwards (see readme.txt).",
+    "data_management_mode": "page_with_modules"
+}

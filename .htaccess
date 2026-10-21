@@ -1,0 +1,25 @@
+# LABO: PHP runs only through the three entry points of this folder
+#   index.php      html pages
+#   labo_swap.php  ajax requests
+#   file_swap.php  files
+# every other PHP file is only included by them and can't be called from the web
+# (never name another file index.php, labo_swap.php or file_swap.php in a sub-folder)
+
+Options -Indexes
+DirectoryIndex index.php
+
+<FilesMatch "\.(php|phtml|phar)$">
+	Require all denied
+</FilesMatch>
+
+<FilesMatch "^(index|labo_swap|file_swap)\.php$">
+	Require all granted
+</FilesMatch>
+
+# documentation, logs and database dumps are not for the web
+<FilesMatch "(?i)(^readme|\.(txt|md|log|sql|bak)$)">
+	Require all denied
+</FilesMatch>
+
+# old addresses of the pages lead to the project root
+RedirectMatch 302 ^(.*)/(account|modules)/?$ $1/

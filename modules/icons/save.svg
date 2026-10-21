@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="48"
+   height="48"
+   viewBox="0 0 12.7 12.7"
+   version="1.1"
+   id="svg214"
+   inkscape:version="1.2.2 (1:1.2.2+202212051552+b0a8486541)"
+   sodipodi:docname="save.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview216"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="53.821772"
+     inkscape:cx="31.362773"
+     inkscape:cy="10.497611"
+     inkscape:window-width="2490"
+     inkscape:window-height="1403"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs211" />
+  <g
+     inkscape:label="Calque 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.7;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+       d="m 1.507245,11.287204 9.68551,-0.02015 L 11.1417,4.0973058 8.73725,1.4119271 1.5214382,1.394851 Z"
+       id="path1085"
+       sodipodi:nodetypes="cccccc" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.7;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+       d="M 8.6739446,6.7482178 6.8471028,9.0222239 6.1755885,7.9682666"
+       id="path1138-3-7"
+       sodipodi:nodetypes="ccc" />
+    <rect
+       style="opacity:0.97;fill:none;stroke:#000000;stroke-width:0.7;stroke-linecap:round;stroke-linejoin:round"
+       id="rect4142"
+       width="3.9516487"
+       height="1.6603703"
+       x="4.0946569"
+       y="2.7406158" />
+    <circle
+       id="path4197"
+       style="fill:#000000;stroke:#000000;stroke-width:0.264583"
+       cx="7.0272717"
+       cy="6.7564087"
+       r="0.0048616421" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.7;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:1;stroke-dasharray:none"
+       d="M 7.3325145,6.7430477 H 3.1177703 v 3.097457 H 9.4974591 V 7.360486 l -0.00799,-0.0069"
+       id="path4201" />
+  </g>
+</svg>

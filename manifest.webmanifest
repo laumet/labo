@@ -1,0 +1,44 @@
+{
+  "short_name": "RMR labo",
+  "name": "RMR labo",
+  "description": "RMR labo",
+  "icons": [
+    {
+      "src": "appicon/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "appicon/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "background_color": "#342D2C",
+  "display": "fullscreen",
+  "scope": ".",
+  "theme_color": "#342D2C",
+
+  "screenshots": [
+    {
+        "src": "screenshots/wide1.png",
+        "type": "image/png",
+        "sizes": "747x449",
+        "form_factor": "wide",
+        "label": "labo"
+    },
+    {
+        "src": "screenshots/narrow1.png",
+        "type": "image/png",
+        "sizes": "539x780",
+        "form_factor": "narrow",
+        "label": "labo"
+    }
+],
+
+  "related_applications": [{
+    "platform": "webapp",
+    "url": "https://mini.paulmetthez.ch/barrakuda/manifest.webmanifest"
+  }]
+}

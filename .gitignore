@@ -1,0 +1,10 @@
+# Runtime data and generated files
+/cache/*
+!/cache/.htaccess
+/logs/*
+!/logs/.gitignore
+!/logs/.htaccess
+/modules/tmp/*
+!/modules/tmp/.htaccess
+/plugins/pdf/tmp/*
+/modules/appicon/edit/*~lock~

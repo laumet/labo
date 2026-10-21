@@ -1,0 +1,1 @@
+<script src="js/labo_basis.js"></script>

@@ -1,0 +1,117 @@
+/* site part */
+
+* {margin: 0; padding: 0; box-sizing: border-box;}
+page, section, menu, workspace, screen, name, canvas, item, title, content {display: block;}
+body {font-size: 1rem;}
+body, * {font-family: 'Arimo', sans-serif;}
+body {--bg: #9083ab; --dark: #1F1F3D; --darker: #000; --light: #FFF; --second: #1F1F3D; --main: #FFAFAF; --pad: 4px;}
+/*old: --main: #FFAFAF;*/
+
+body {
+	background-color: var(--dark);
+	width: 100%;
+	max-width: 1200px;
+	margin: auto;
+}
+
+header {
+	background-color: var(--dark);
+	z-index: 2;
+    position: relative;
+    height: fit-content;
+	width:100%;
+	margin: 2em 0;
+	align-items: baseline;
+	justify-content: space-between;
+}
+
+header h1 { width: 100%;}
+
+header button {width: 30px; height: 30px;}
+
+.site_name {
+	z-index: 13;
+	text-decoration: none;
+}
+
+content {
+	background-color: var(--bg);
+	padding: 1em;
+}
+
+content > div {
+	margin: 1em;
+	border-radius: 1em 1em;
+	background-color: var(--light);
+}
+
+content > .post_second {
+	background-color: var(--main);
+}
+
+menu {
+    position: absolute;
+    right: 0;
+    border: 1px white solid;
+    padding: 0.5em;
+    border-radius: 0.5em;
+    background: var(--bg);
+    z-index: 1;
+    align-items: flex-end;
+    font-size: 1.2em;
+    font-weight: bold;
+    text-wrap: nowrap;
+    bottom: 100%;
+    transition: bottom 0.5s;
+}
+
+menu.open {
+	bottom: -101%;
+}
+
+menu separator {
+    border-bottom: 1px white solid;
+    margin: 0.25em 0;
+    width: 100%;
+}
+
+.menu_hidder {
+    width: 100%;
+    background: var(--dark);
+    z-index: 10;
+    height: 11em;
+    top: -2em;
+    padding: 4em 0 0;
+    display: flex;
+    flex-direction: row-reverse;
+    position: absolute;
+    align-items: end;
+}
+
+.menu_hidder img {
+	width: 4em;
+    height: auto;
+    margin: 0em 0;
+}
+
+menu a {
+	margin: 0.25em 0;
+	color:white !important;
+	text-decoration: none;
+	margin: 0.5em 0 0 0.5em;
+}
+
+/*
+.post_main a {
+	color: unset !important;
+}
+*/
+
+a:hover, .menu_hidder img:hover {
+	transform: scale(110%, 110%) !important;
+}
+
+/* file galery */
+listfilegalery { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(20vw, 100%), 1fr)); grid-template-rows: max-content; width: 100%; grid-template-columns: repeat(auto-fit, minmax(min(10vw, 100%), 1fr)); }
+fileelement { display: flex; flex-direction: row; width: auto; flex-wrap: wrap; word-wrap: break-word; word-break: break-all; align-items: center; border: 4px solid transparent; width: fit-content; }
+listfilegalery fileelement img {height: 3rem; width: auto; padding-right: 1rem; }
